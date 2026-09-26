@@ -127,12 +127,12 @@ def register_actual_bake_end(batch_id: int, body: ActualBakeEndIn, db: Session =
         raise HTTPException(404, "产品不存在")
     recipe = _recipe(product)
     actual = body.actual_bake_end_min
-    batch.actual_bake_end_min = actual
-    db.commit()
-    db.refresh(batch)
     if not is_valid_actual_bake_end(batch.start_min, recipe, actual):
         span = bake_span(batch.start_min, recipe)
         raise HTTPException(400, f"实际出炉分钟 {actual} 不在烘烤段 [{span.start},{span.end}] 内")
+    batch.actual_bake_end_min = actual
+    db.commit()
+    db.refresh(batch)
     return _batch_out(db, batch)
 
 

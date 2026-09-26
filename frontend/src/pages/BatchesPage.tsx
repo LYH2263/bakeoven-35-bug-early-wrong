@@ -47,7 +47,7 @@ export default function BatchesPage() {
     <table className="table"><thead><tr><th>批次</th><th>产品</th><th>炉位</th><th>发酵</th><th>烘烤结束</th><th>实际出炉</th><th>状态</th><th>登记出炉</th></tr></thead>
     <tbody>{rows.map(b => <tr key={b.id}><td className="mono">{b.code}</td><td>{b.product_name}</td><td>{b.oven_label}</td>
       <td className="mono">{fmt(b.start_min)}–{fmt(b.ferment_end ?? b.start_min)}</td>
-      <td className="mono">{fmt(b.bake_end ?? b.start_min)}</td>
+      <td className="mono">{fmt(pageBakeEnd(b.bake_end ?? b.start_min, b.actual_bake_end_min))}</td>
       <td className="mono">{(b.actual_bake_end_min ?? b.bake_end) != null ? fmt((b.actual_bake_end_min ?? b.bake_end)) : "—"}</td><td>{b.status}</td>
       <td><input type="number" style={{ width: 90 }} placeholder={`${b.ferment_end ?? 0}–${b.bake_end ?? 0}`}
         value={outMin[b.id] ?? ""} onChange={e => setOutMin({ ...outMin, [b.id]: e.target.value === "" ? undefined : Number(e.target.value) })} />
@@ -58,5 +58,5 @@ export default function BatchesPage() {
 
 
 export function pageBakeEnd(planned: number, actual: number | null | undefined) {
-  return actual == null ? planned : planned;
+  return actual == null ? planned : actual;
 }

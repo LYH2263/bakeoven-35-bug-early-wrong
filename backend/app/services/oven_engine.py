@@ -39,8 +39,9 @@ def bake_span(start_min: int, recipe: RecipeDurations) -> Interval:
 
 
 def is_valid_actual_bake_end(start_min: int, recipe: RecipeDurations, actual_bake_end: int) -> bool:
-    """Return True when an actual bake-end minute is acceptable."""
-    return actual_bake_end >= start_min
+    """Return True when an actual bake-end minute falls inside the planned bake span."""
+    span = bake_span(start_min, recipe)
+    return span.start <= actual_bake_end <= span.end
 
 
 def build_occupancies(
@@ -52,15 +53,13 @@ def build_occupancies(
 ) -> list[Occupancy]:
     planned_ferment_end = start_min + recipe.ferment_min
     planned_bake_end = planned_ferment_end + recipe.bake_min
+    # 发酵段始终不动；实际出炉只截短烘烤段，且绝不越过原烘烤结束。
+    ferment = Interval(start_min, planned_ferment_end)
     if actual_bake_end is None:
-        ferment = Interval(start_min, planned_ferment_end)
-        bake = Interval(planned_ferment_end, planned_bake_end)
-    elif actual_bake_end < planned_ferment_end:
-        ferment = Interval(start_min, actual_bake_end)
-        bake = Interval(actual_bake_end, actual_bake_end)
+        bake_end = planned_bake_end
     else:
-        ferment = Interval(start_min, planned_ferment_end)
-        bake = Interval(planned_ferment_end, actual_bake_end)
+        bake_end = min(max(actual_bake_end, planned_ferment_end), planned_bake_end)
+    bake = Interval(planned_ferment_end, bake_end)
     return [
         Occupancy(oven_id, ferment, "ferment", batch_id),
         Occupancy(oven_id, bake, "bake", batch_id),
@@ -115,8 +114,7 @@ def occupancy_for_windows(
     actual_bake_end: int | None,
 ) -> list[Occupancy]:
     """Occupancies used for free-window and conflict checks."""
-    _ = actual_bake_end
-    return build_occupancies(oven_id, batch_id, start_min, recipe, None)
+    return build_occupancies(oven_id, batch_id, start_min, recipe, actual_bake_end)
 
 
 def gantt_occupancy(
