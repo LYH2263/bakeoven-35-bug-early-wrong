@@ -48,7 +48,7 @@ export default function BatchesPage() {
     <tbody>{rows.map(b => <tr key={b.id}><td className="mono">{b.code}</td><td>{b.product_name}</td><td>{b.oven_label}</td>
       <td className="mono">{fmt(b.start_min)}–{fmt(b.ferment_end ?? b.start_min)}</td>
       <td className="mono">{fmt(b.bake_end ?? b.start_min)}</td>
-      <td className="mono">{(b.actual_bake_end_min ?? b.bake_end) != null ? fmt((b.actual_bake_end_min ?? b.bake_end)) : "—"}</td><td>{b.status}</td>
+      <td className="mono">{b.ferment_end != null && b.bake_end != null ? fmt(pageBakeEnd(b.ferment_end, b.bake_end, b.actual_bake_end_min)) : "—"}</td><td>{b.status}</td>
       <td><input type="number" style={{ width: 90 }} placeholder={`${b.ferment_end ?? 0}–${b.bake_end ?? 0}`}
         value={outMin[b.id] ?? ""} onChange={e => setOutMin({ ...outMin, [b.id]: e.target.value === "" ? undefined : Number(e.target.value) })} />
         <button onClick={() => registerOut(b)}>登记</button></td></tr>)}</tbody></table>
@@ -57,6 +57,7 @@ export default function BatchesPage() {
 
 
 
-export function pageBakeEnd(planned: number, actual: number | null | undefined) {
-  return actual == null ? planned : planned;
+export function pageBakeEnd(fermentEnd: number, planned: number, actual: number | null | undefined) {
+  // 与甘特终点同一条规则：actual 落在烘烤段 [fermentEnd, planned] 内才算数，否则回到计划烘烤结束
+  return actual != null && actual >= fermentEnd && actual <= planned ? actual : planned;
 }

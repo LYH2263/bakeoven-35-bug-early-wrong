@@ -65,6 +65,14 @@ def test_actual_bake_end_validation_bounds():
     assert not is_valid_actual_bake_end(100, recipe, 151)  # 晚于原烘烤结束
 
 
+def test_invalid_actual_bake_end_falls_back_to_planned():
+    recipe = RecipeDurations(20, 30)  # 发酵 [100,120) 烘烤 [120,150)
+    for bad in (119, 151):
+        ferment, bake = build_occupancies(1, 5, 100, recipe, actual_bake_end=bad)
+        assert ferment.interval == Interval(100, 120)  # 发酵起止不动
+        assert bake.interval == Interval(120, 150)  # 非法值回到原烘烤结束
+
+
 def test_truncated_tail_frees_window():
     recipe = RecipeDurations(20, 30)
     existing = [Occupancy(1, Interval(0, 100), "bake", 99)]  # 批次前的时段已被占满
